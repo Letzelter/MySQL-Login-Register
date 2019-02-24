@@ -1,6 +1,7 @@
 #include <a_samp>
 #include <a_mysql>
 #include <bcrypt>
+#include <zcmd>
 #include <easyDialog>
 
 #define	BCRYPT_COST	12
@@ -145,6 +146,34 @@ public OnPlayerLoad(playerid)
 
 	LoggedIn[playerid] = true;
 	SendClientMessage(playerid, -1, "Welcome back to our server.");
+	return 1;
+}
+
+CMD:changepassword(playerid, params[])
+{
+	new string[128];
+	format(string, sizeof(string), "{FFFFFF}Password Change\nInput the new password you want to have for your account.");
+	Dialog_Show(playerid, DIALOG_PASSWORDCHANGE, DIALOG_STYLE_PASSWORD, "Change your password", string, "Change", "Close");
+	return 1;
+}
+
+Dialog:DIALOG_PASSWORDCHANGE(playerid, response, listitem, inputtext[])
+{
+	if(response)
+	{
+		bcrypt_hash(inputtext, BCRYPT_COST, "OnPasswordChanged", "i", playerid);
+	}
+	return 1;
+}
+
+forward OnPasswordChanged(playerid);
+public OnPasswordChanged(playerid)
+{
+	new hash[BCRYPT_HASH_LENGTH], query[300];
+	bcrypt_get_hash(hash);
+	mysql_format(Database, query, sizeof(query), "UPDATE `players` SET `Password` = '%e' WHERE `Username` = '%e'", hash, GetName(playerid));
+	mysql_query(Database, query);
+	SendClientMessage(playerid, -1, "You have successfully changed your password.");
 	return 1;
 }
 
